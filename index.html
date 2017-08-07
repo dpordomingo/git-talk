@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code {font-family: 'Ubuntu Mono'; }
+      p, li {
+        line-height: 1.5em;
+      }
+      .remark-slide-content {
+          background-size: cover !important;
+      }
+      .remark-hint {
+        font-size: .7em;
+        position: absolute;
+        bottom: 20px;
+        right: 100px;
+        text-align: right;
+      }
+      .remark-hint li {
+        list-style: none;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Improve your git skills
+
+---
+
+# Index
+
+00. Disclaimer
+01. Intro
+02. Concepts
+03. Basics
+04. Server
+06. Contributing
+07. Scripting GitHub
+08. Customizing
+09. Bibliography
+10. Workshop
+
+<div class="remark-hint">
+  Powered by <a href="https://github.com/gnab/remark" target="_blank">remark</a>
+  <ul>
+    <li>open a cloned view: key  &lt;<b>C</b>&gt;</li>
+    <li>toggle the presenter mode: key &lt;<b>P</b>&gt;</li>
+  </ul>
+</div>
+
+---
+
+background-image: url(assets/sorry.jpg)
+
+???
+
+- my English sucks,
+- I'm not a git expert, and it's the first time I gave this talk and any talk (in general)
+- I underestimated the time needed to prepare this talk
+- *"En casa de Herrero, cuchillo de palo"*<br />
+*"In the Blacksmith's house, it is used wooden knive"*<br />
+I lost my slides yesterday afternoon because I didn't use any VCS
+
+---
+
+# Intro
+
+<img src="https://git-scm.com/book/en/v2/images/distributed.png" width="350" style="float:right" />
+- Git is a Version Control System (VCS)
+- It is quite new. It was released in **2005**
+- Goals
+  - Speed
+  - Simple design
+  - Non-linear development (performance in branches)
+  - Scalable to huge projects
+  - Fully distributed
+- Most of operations are done locally
+- Updaing remotes is done only from time to time
+
+???
+
+- **New**, if you was born in the 80'
+- **Performance**, as being developed for support the development of the Linux kernel
+- Being **distributed** means that you have a full local copy of the history.
+So you can ruin things, and also recover them from a remote repository.
+
+---
+
+# Intro
+
+- Git commands only use to add information to the DB
+- CLI commands are the Git core. GUI tools run over CLI commands.
+- Git commands are widely documented
+```shell
+$ git help <verb>
+$ git <verb> --help
+$ man git-<verb>
+```
+
+https://git-scm.com/book/en/v2/Getting-Started-The-Command-Line
+
+https://git-scm.com/book/en/v2/Getting-Started-Getting-Help
+
+---
+
+# Concepts
+## Commits
+- Commits are snapshots, not diffs
+  ```go
+  Commit {
+      message string
+      commiter UseEmail
+      commitDate timestamp
+      author UseEmail
+      authorDate timestamp
+      tree Hash //root directory
+      parents []Hash //of the parent commits
+  }
+  ```
+
+**Git Has Integrity**. Every single commit is identified by a SHA1 Hash.
+
+https://blog.thoughtram.io/git/2014/11/18/the-anatomy-of-a-git-commit.html
+
+---
+
+# Concepts
+## States
+
+- **.git** (git DB) where is stored the repository data
+- StagingArea, or **Index**: stores the changes done after the last checkout, as they will be converted into a commit if you `git commit`
+- **Working directory**: is the sandbox where you play
+
+<div style="text-align:center">
+  <img src="assets/graphs-states-areas.png" width="400" />
+</div>
+
+https://git-scm.com/book/en/v2/Getting-Started-Git-Basics
+
+???
+
+- If you delete your .git folder:
+  - all the repo info will be deleted,
+  - you need to recover that folder without git
+    - from a remote repo: `git init` and `git remote add`
+    - from another storage: backup, cloud...
+
+---
+
+# Concepts
+## Branches
+- A branch is a pointer to a single commit
+  ```shell
+  $ cat .git/refs/heads/master 
+  bfafe2db6c0bcf0fdd01682e05e5c981fd993b8c
+  ```
+- A branch is an alive pointer: it's updated when you commit over it.
+
+https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
+
+---
+
+# Concepts
+## Branches
+
+In a normal working state (not detached): **HEAD**: points to a branch
+```shell
+$ cat .git/HEAD 
+ref: refs/heads/master
+```
+If you are not on a branch (detached): **HEAD**: points to a commit
+```shell
+$ cat .git/HEAD 
+f153cae02cc9e90b0f07a73bd28e6287a1468d65
+```
+You can create a branch from that point doing:
+```shell
+$ git checkout {-b|-B} <newBranchName>
+```
+
+**master** is not a special branch; it is just a name given to a long term branch
+
+---
+
+# Concepts
+## Tags
+
+It is a **pointer** to a commit.
+
+It is a static pointer, so it is not updated (like a branch pointer)
+
+There are two types:
+- annotated tags **preferred ones**
+- lightweight tags
+
+```shell
+$ git tag -ln [pattern]
+$ git tag -a <tagName> -m <message> <refference> [-f] #annotated
+$ git tag -d <tagName>
+```
+
+They need to be explicitily pushed to be shared
+```shell
+$ git push <remoteName> <tagName>
+```
+
+---
+
+# Concepts
+## Fork
+
+A **fork** is a GitHub concept, base on the term "remote repository".
+
+- It is created from certain "remote repository", that is taken as an "original"
+- Its history is created as a full copy of the "original" one
+- It is a "remote repository" owned by a certain used
+
+If you copy manually a git repository, it is not considered a fork by github, but
+the copied repository will share most of the "fork" characteristics
+
+---
+
+# Basics
+## Recording changes
+
+<div style="text-align:center">
+  <img src="assets/graphs-states-working.png" width="400" />
+</div>
+
+```shell
+$ touch newFile
+$ git add new.file
+$ echo "new line" >> existing.file
+$ git add existing.file
+$ git rm removed.file
+$ git commit -m "Record changes"
+```
+
+https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository
+
+---
+
+# Basics
+<img src="https://git-scm.com/book/en/v2/images/distributed.png" width="350" style="float:right" />
+
+## Working with remotes
+
+Remote repositories are versions of the same project that are hosted somewhere
+
+Starting a git repo
+```shell
+$ git init
+$ git remote add <remoteName> <remoteUrl>
+```
+or
+```shell
+$ git clone <remoteUrl>
+```
+
+**origin** is not a special remote; it is just a name given to the one used for the clone
+
+https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository
+
+???
+
+Depending if you want to start from a remote repository,
+or if you have already things in your computer
+
+---
+
+# Basics. Working with remotes
+
+You can list/add/rename/remove remotes whenever you want
+
+```shell
+$ git remote -v
+$ git remote add <shortname> <url>
+$ git remote rename <shortname> <newShortname>
+$ git remote remove <shortname>
+```
+
+References of remote branches are stored localy; you can update them doing
+
+```shell
+$ git remote update #updates all your remotes
+$ git remote update <shortname>
+$ git fetch <shortname>
+```
+
+References of remote branches are also updated when you pull and push
+
+Remote branches are only updated with `git push` command
+
+https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes
+
+---
+
+# Basics
+## Branching
+
+You can create a branch doing:
+```shell
+$ git branch <branchName>
+$ git checkout -{b|B} <branchName>
+```
+
+You can list branches and change between them with:
+```shell
+$ git branch -v[a]
+$ git checkout [-f] <branchName>
+```
+If you have not staged changes, and they can not be applied over the target branch
+the checkout command will cry, and the checkout will not be allowed.
+
+In that case, you can stash, commit, create a temporal branch...
+
+https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
+
+---
+
+# Basics. Branching
+
+
+```shell
+$ git merge <branchName>
+```
+When you merge two branches, it can be:
+- a **fast-forward**, if the merged branch is reachable from the current one
+- a **commit merge**, if both branches has commits after his last common commit
+
+**Conflicts** are those situations when the merge commit can not be done with a "fast-forward"
+and "three-way merge" can not be cleanly done because incompatible editions on merge children 
+
+To **resolve a conflict** it is needed to edit the involved files, removing the "conflict markers",
+to add them into the staging area again, and then to commit.
+
+You can **abort a commit** doing
+
+```shell
+$ git merge --abort
+```
+
+---
+
+# Server. Protocols
+
+### local protocol
+```shell
+$ git clone file:///srv/git/project.git
+```
+- Pro: Uses the OS File System, user management, network...
+- Cons: Use OS FS, user management... than is difficult to scale. Use to be innefficient
+
+### HTTP
+```shell
+$ git clone https://github.com/isagalaev/highlight.js.git
+```
+- Pro: Easier to use, using user/passwords. Quite efficient 
+- Cons: Trickier to configure
+
+https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
+
+---
+
+# Server. Protocols
+
+### SSH
+```shell
+$ git clone git@github.com:isagalaev/highlight.js.git
+```
+- Pro: Easier to configure. Quite performant
+- Cons: User needs a ssh key. There is no anonymous use possible
+
+### Git
+```shell
+$ git clone https://github.com/isagalaev/highlight.js.git
+```
+- Pro: Easy to use: no security. Quite performant
+- Cons: No security at all, so usually no push available. The most diffult one to set up
+
+https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
+
+---
+
+# Server
+## Hosting sites
+- Github
+- Bitbucket
+- ...
+
+https://git.wiki.kernel.org/index.php/GitHosting
+
+???
+
+At this point the **difference between GitHub and Git** should be clear:
+Github is just a hosting for Git repos, with many extras for project management.
+
+---
+
+# Server
+## Build your own GitHub
+
+- **GitLab**: a service "like" GitHub. You can control things like server hooks, user management...
+
+https://about.gitlab.com/
+
+- **cGit**: web interface written in C
+
+https://git.zx2c4.com/cgit/about/
+
+- **Gitweb**: web interface written in Perl
+
+https://git.wiki.kernel.org/index.php/Gitweb
+
+---
+
+# Contributing
+## Guidelines
+
+Git is quite flexible, so it is needed to know how is expected that other people use it, so you
+can use it the same way
+
+Since Git is a decentraliced VCS, thigs become difficult when everyone works in a different way
+and/or does not consider how is the repository evolving.
+
+Every team or project can have its own git **workflow** that should be follow by the developers.
+
+Important guidelines use to be referenced from one of the following:
+- README.md
+- CONTRIBUTING
+
+---
+
+# Contributing
+## Common guidelines
+
+Commits:
+- Should be atomic: one per feature; each one should work per-se
+- Imperative tense
+- Short descriptions (<50 characters)
+- Using hooks to ensure certain rules is great
+
+Issues/bugfixing:
+- Work in topic branches
+- Topic branches should start from a stable point, be merged, and deleted
+
+Releases:
+- Tag them in a logic way <br />
+(for example, following semantic versioning http://semver.org/)
+
+???
+
+There could be many others like:
+- branch names must be preffiexed by "feature/" or "hotfix/" depending on is nature
+- commit messages must includes "close issue#33"
+- all commits must be checked with any code linter...
+
+---
+
+# Contributing
+## Workflows
+<img src="assets/graphs-workflow-centralized.png" width="280" style="float:right; border: 0 solid #777; border-width:1px 0 1px;" />
+- Centralized Workflow <br />
+<br clear=both />
+<img src="assets/graphs-workflow-integration.png" width="280" style="float:right; border: 0 solid #777; border-width:0 0 1px;" />
+- Integration manager <br />
+<br clear=both />
+<img src="assets/graphs-workflow-dictator.png" width="280" style="float:right; border: 0 solid #777; border-width:0 0 1px;" />
+- Dictator and Lieutenants Workflow <br />
+<br clear=both />
+- GitHub Flow, based in PR
+
+https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
+
+---
+
+# Contributing. GitFlow
+<img src="assets/graphs-workflow-gitFlow.png" width="280" style="float:right;" />
+
+- Long term branches: **master** and **develop**
+- Ad-hoc branches:
+  - starting from **master**
+    - **develop** (only for its first creation)
+    - hotfixes
+  - starting from **develop**
+    - feature branches
+    - release branches
+- Merges:
+  - hotfixes are merged into **master**, **develop** (and release branches)
+  - feature branches are merged into **develop**
+  - release branches are merged into **master** and **develop** when approved
+  - **develop** is NEVER merged into **master**
+- Tags: Over **master**
+
+---
+
+## Scripting GitHub
+
+Methods to throw events or perform actions once remote repositories changes
+
+### Services
+Integrations with 3rd party apps that sends emails, runs the CI...
+
+### Webhooks
+Custom HTTP endpoints that are requested/pushed when certain event occurs
+
+### GitHub API+
+Github HTTP endpoints that you can use to interact with Github, for example,
+changing the status of an issue or a PullRequest
+
+https://git-scm.com/book/en/v2/GitHub-Scripting-GitHub
+
+---
+
+# Customizing
+- https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
+- https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration
+
+### Aliases
+- https://git-scm.com/book/en/v2/Git-Basics-Git-Aliases
+
+### Diff with binaries
+- https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes
+
+### Hooks
+- https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
+- https://git-scm.com/book/en/v2/Customizing-Git-An-Example-Git-Enforced-Policy
+
+---
+
+# questions 1/3
+
+- What differences are between 'merge' and 'rebase'
+- What differences are between 'pull' and 'pull --rebase'
+- What differences are between 'fetch', 'pull' and 'merge'
+- What "fast-foward" means in a "git merge" context
+- A commit can have more than 2 parents
+- The terms 'ours' and 'theirs' are different in a 'merge' context from a 'rebase' context
+
+---
+
+# questions 2/3
+
+- To see the differences between your last commit and the master branch in the original src-d repo
+- To choose only certain parts of certain files you modified to commit only that parts
+- To create new branches from any point of your git history, or from another developer branch 
+- The purpose of 'git stash'
+- To delete a branch that has been already merged
+- To remove files from the "staging area"
+- To revert the changes done by a certain commit
+- To view what lines of code would be committed if you run 'git commit' just now
+- To view your mate's branches
+- To see what things has been done by a mate while you're both working under the same feature branch
+- To work with tags (tag an old commit, remove a tag, list them...)
+- Recover a deleted branch
+
+---
+
+# questions 3/3
+
+- Push --force
+- To append things to the las commit you did
+- To try obtaining a linear history
+- To reorder and join some commits you made before pushing them
+- To find those branches that has been already merged into master, or those that has not
+- To move certain group of commits to another place in order to PR them separately
+- To move pointers everywhere: HEAD, branches...
+
+- See the graph with the commits
+- Resolve conflicts
+- See differences between commits
+
+---
+
+class: center, middle
+background-image: url(assets/end.jpg)
+
+---
+
+# Bibliography
+
+From detailed to more general:
+- [Pro Git book](https://git-scm.com/book/en/v2) **(must have)**
+- https://stackoverflow.com/questions/tagged/git
+- https://www.google.es/search?q=git
+
+### Tutorials:
+- https://try.github.io **(basic, 15min)**
+- https://www.learnenough.com/git-tutorial
+
+### GitFlow
+- https://datasift.github.io/gitflow/IntroducingGitFlow.html
+([cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/))
+- [GitFlow is harmful](http://endoflineblog.com/gitflow-considered-harmful)
+(Alternative: [OneFlow](http://endoflineblog.com/oneflow-a-git-branching-model-and-workflow#introduction))
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
