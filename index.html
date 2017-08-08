@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code {font-family: 'Ubuntu Mono'; }
+      p, li {
+        line-height: 1.5em;
+      }
+      .remark-slide-content {
+          background-size: cover !important;
+      }
+      .remark-hint {
+        font-size: .7em;
+        position: absolute;
+        bottom: 20px;
+        right: 100px;
+        text-align: right;
+      }
+      .remark-hint li {
+        list-style: none;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Improve your git skills
+
+---
+
+# Index
+
+01. Intro
+02. Concepts
+03. Basics
+
+<div class="remark-hint">
+  Powered by <a href="https://github.com/gnab/remark" target="_blank">remark</a>
+  <ul>
+    <li>open a cloned view: key  &lt;<b>C</b>&gt;</li>
+    <li>toggle the presenter mode: key &lt;<b>P</b>&gt;</li>
+  </ul>
+</div>
+
+---
+
+# Intro
+
+<img src="https://git-scm.com/book/en/v2/images/distributed.png" width="350" style="float:right" />
+- Git is a Version Control System (VCS)
+- It is quite new. It was released in **2005**
+- Goals
+  - Speed
+  - Simple design
+  - Non-linear development (performance in branches)
+  - Scalable to huge projects
+  - Fully distributed
+- Most of operations are done locally
+- Updaing remotes is done only from time to time
+
+???
+
+- **New**, if you was born in the 80'
+- **Performance**, as being developed for support the development of the Linux kernel
+- Being **distributed** means that you have a full local copy of the history.
+So you can ruin things, and also recover them from a remote repository.
+
+---
+
+# Intro
+
+- Git commands only use to add information to the DB
+- CLI commands are the Git core. GUI tools run over CLI commands.
+- Git commands are widely documented
+```shell
+$ git help <verb>
+$ git <verb> --help
+$ man git-<verb>
+```
+
+https://git-scm.com/book/en/v2/Getting-Started-The-Command-Line
+
+https://git-scm.com/book/en/v2/Getting-Started-Getting-Help
+
+---
+
+# Concepts
+## Commits
+- Commits are snapshots, not diffs
+  ```go
+  Commit {
+      message string
+      commiter UseEmail
+      commitDate timestamp
+      author UseEmail
+      authorDate timestamp
+      tree Hash //root directory
+      parents []Hash //of the parent commits
+  }
+  ```
+
+**Git Has Integrity**. Every single commit is identified by a SHA1 Hash.
+
+https://blog.thoughtram.io/git/2014/11/18/the-anatomy-of-a-git-commit.html
+
+---
+
+# Concepts
+## States
+
+- **.git** (git DB) where is stored the repository data
+- StagingArea, or **Index**: stores the changes done after the last checkout, as they will be converted into a commit if you `git commit`
+- **Working directory**: is the sandbox where you play
+
+<div style="text-align:center">
+  <img src="assets/graphs-states-areas.png" width="400" />
+</div>
+
+https://git-scm.com/book/en/v2/Getting-Started-Git-Basics
+
+???
+
+- If you delete your .git folder:
+  - all the repo info will be deleted,
+  - you need to recover that folder without git
+    - from a remote repo: `git init` and `git remote add`
+    - from another storage: backup, cloud...
+
+---
+
+# Concepts
+## Branches
+- A branch is a pointer to a single commit
+  ```shell
+  $ cat .git/refs/heads/master 
+  bfafe2db6c0bcf0fdd01682e05e5c981fd993b8c
+  ```
+- A branch is an alive pointer: it's updated when you commit over it.
+
+https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
+
+---
+
+# Concepts
+## Branches
+
+In a normal working state (not detached): **HEAD**: points to a branch
+```shell
+$ cat .git/HEAD 
+ref: refs/heads/master
+```
+If you are not on a branch (detached): **HEAD**: points to a commit
+```shell
+$ cat .git/HEAD 
+f153cae02cc9e90b0f07a73bd28e6287a1468d65
+```
+You can create a branch from that point doing:
+```shell
+$ git checkout {-b|-B} <newBranchName>
+```
+
+**master** is not a special branch; it is just a name given to a long term branch
+
+---
+
+# Concepts
+## Tags
+
+It is a **pointer** to a commit.
+
+It is a static pointer, so it is not updated (like a branch pointer)
+
+There are two types:
+- annotated tags **preferred ones**
+- lightweight tags
+
+```shell
+$ git tag -ln [pattern]
+$ git tag -a <tagName> -m <message> <refference> [-f] #annotated
+$ git tag -d <tagName>
+```
+
+They need to be explicitily pushed to be shared
+```shell
+$ git push <remoteName> <tagName>
+```
+
+---
+
+# Concepts
+## Fork
+
+A **fork** is a GitHub concept, base on the term "remote repository".
+
+- It is created from certain "remote repository", that is taken as an "original"
+- Its history is created as a full copy of the "original" one
+- It is a "remote repository" owned by a certain used
+
+If you copy manually a git repository, it is not considered a fork by github, but
+the copied repository will share most of the "fork" characteristics
+
+---
+
+# Basics
+## Recording changes
+
+<div style="text-align:center">
+  <img src="assets/graphs-states-working.png" width="400" />
+</div>
+
+```shell
+$ touch newFile
+$ git add new.file
+$ echo "new line" >> existing.file
+$ git add existing.file
+$ git rm removed.file
+$ git commit -m "Record changes"
+```
+
+https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository
+
+---
+
+# Basics
+<img src="https://git-scm.com/book/en/v2/images/distributed.png" width="350" style="float:right" />
+
+## Working with remotes
+
+Remote repositories are versions of the same project that are hosted somewhere
+
+Starting a git repo
+```shell
+$ git init
+$ git remote add <remoteName> <remoteUrl>
+```
+or
+```shell
+$ git clone <remoteUrl>
+```
+
+**origin** is not a special remote; it is just a name given to the one used for the clone
+
+https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository
+
+???
+
+Depending if you want to start from a remote repository,
+or if you have already things in your computer
+
+---
+
+# Basics. Working with remotes
+
+You can list/add/rename/remove remotes whenever you want
+
+```shell
+$ git remote -v
+$ git remote add <shortname> <url>
+$ git remote rename <shortname> <newShortname>
+$ git remote remove <shortname>
+```
+
+References of remote branches are stored localy; you can update them doing
+
+```shell
+$ git remote update #updates all your remotes
+$ git remote update <shortname>
+$ git fetch <shortname>
+```
+
+References of remote branches are also updated when you pull and push
+
+Remote branches are only updated with `git push` command
+
+https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes
+
+---
+
+# Basics
+## Branching
+
+You can create a branch doing:
+```shell
+$ git branch <branchName>
+$ git checkout -{b|B} <branchName>
+```
+
+You can list branches and change between them with:
+```shell
+$ git branch -v[a]
+$ git checkout [-f] <branchName>
+```
+If you have not staged changes, and they can not be applied over the target branch
+the checkout command will cry, and the checkout will not be allowed.
+
+In that case, you can stash, commit, create a temporal branch...
+
+https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
+
+---
+
+# Basics. Branching
+
+
+```shell
+$ git merge <branchName>
+```
+When you merge two branches, it can be:
+- a **fast-forward**, if the merged branch is reachable from the current one
+- a **commit merge**, if both branches has commits after his last common commit
+
+**Conflicts** are those situations when the merge commit can not be done with a "fast-forward"
+and "three-way merge" can not be cleanly done because incompatible editions on merge children 
+
+To **resolve a conflict** it is needed to edit the involved files, removing the "conflict markers",
+to add them into the staging area again, and then to commit.
+
+You can **abort a commit** doing
+
+```shell
+$ git merge --abort
+```
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
