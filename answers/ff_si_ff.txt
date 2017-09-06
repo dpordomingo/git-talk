@@ -1,0 +1,5 @@
+digraph G {
+    e [label="e:develop:master:HEAD"]
+    #m [label="c:master:HEAD"]
+    a->b->c->d->e
+}

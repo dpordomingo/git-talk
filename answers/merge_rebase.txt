@@ -1,0 +1,9 @@
+digraph G {
+    e [label="e:develop"]
+    m [label=master]
+    #om [label="origin/master"]
+    a->b->m#->om
+    b->d->e
+    #D->merge2
+    #om->merge2
+}

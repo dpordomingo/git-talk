@@ -1,0 +1,4 @@
+digraph G {
+    a->b->tag1->c->master
+    tag1->d2->"e2:devel"
+}
